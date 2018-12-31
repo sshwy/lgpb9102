@@ -22,17 +22,16 @@ user_lst = []
 task_que = []
 
 def print_line():# 输出分割线
-    print(Fore.MAGENTA + "==============================================================================")
+    print(Fore.MAGENTA + '=' * 78 )
 
 times = 0
 mlst = []
 task_success = 0
-task_success_que = []
+#task_success_que = []
 #用户代理报头
 headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36'}
 
 def check_task(point):
-    #print(Fore.GREEN+"check_task({0},{1})".format(point.x,point.y))
     #对用到的全局变量的声明
     global times
     global mlst
@@ -40,7 +39,7 @@ def check_task(point):
     if times == 100:#每check这么多次就更新一次q
         times -= 100
     if times == 0:
-        print(Fore.GREEN+"update q!")
+        print(Fore.RESET+"update q!")
         try:
             q = requests.get("https://www.luogu.org/paintBoard/board", cookies=user_lst[0].cookie_dict, headers=headers,timeout=20)
         except:
@@ -48,7 +47,7 @@ def check_task(point):
             q = requests.get("https://www.luogu.org/paintBoard/board", cookies=user_lst[0].cookie_dict, headers=headers,timeout=20)
         mlst = q.text.split('\n')#每一行分为一个字符串元素；字符串数组即为二维字符数组
     times += 1
-    if mlst[point.x][point.y] == point.col:
+    if mlst[point.x][point.y] == point.col or point.col == 'z' :
         task_success += 1
         return True
     else:
@@ -90,15 +89,12 @@ with open("base32.txt", "r") as pic:#ppm转'LGPB'友好文件
 
 log_timer = time.time()
 
-print(Fore.GREEN+"QUEUE START")
+print(Fore.RESET+"QUEUE START")
 while len(task_que) > 0:
     now_task = task_que[0]#赋值队首
     task_que.pop(0)#弹出
     stat = check_task(now_task)
     if stat == False:#如果需要画
-        #data['x'] = now_task.x
-        #data['y'] = now_task.y
-        #data['color'] = int(str(now_task.col), base=32)
         data = { 'x' : now_task.x , 'y' : now_task.y , 'color' : int(str(now_task.col),base=32) }
         user = user_lst[0]#用户队列中的第一个
         user_lst.pop(0)
@@ -110,33 +106,37 @@ while len(task_que) > 0:
                 print("\r"+" "*30,end='')
             #time.sleep(30 + user.last_time - time.time())
         try:
-            r = requests.post("https://www.luogu.org/paintBoard/paint",
-                              data=data, cookies=user.cookie_dict, headers=headers,timeout=20)
+            r = requests.post("https://www.luogu.org/paintBoard/paint",data=data, cookies=user.cookie_dict, headers=headers,timeout=20)
         except:
             time.sleep(0.01)
-            r = requests.post("https://www.luogu.org/paintBoard/paint",
-                              data=data, cookies=user.cookie_dict, headers=headers,timeout=20)
+            r = requests.post("https://www.luogu.org/paintBoard/paint",data=data, cookies=user.cookie_dict, headers=headers,timeout=20)
         if str(r.text).find("500") != -1:
             out = Fore.RED
-            print(out + "Paint failed")
+            print(out + "[Paint failed]Waiting")
+        elif str(r.text).find("401") != -1:
+            out = Fore.YELLOW
+            print(out + "[Paint failed]Unauthorized")
+        elif str(r.text).find("200") == -1:
+            out = Fore.BLUE
+            print(out + "[Paint succeed]UnknownError")
         else:
             out = Fore.GREEN
             print(out + "Paint succeed")
             task_success += 1
-            task_success_que.append(time.time())
-            if len(task_success_que) != 0:
-                if time.time() - task_success_que[0] > 30:
-                    task_success_que.pop(0)
+            #task_success_que.append(time.time())
+            #if len(task_success_que) != 0:
+            #    if time.time() - task_success_que[0] > 30:
+            #        task_success_que.pop(0)
         print(out + "ret_code: {0} text: {1}".format(r.status_code, r.text))
         print(out + "user: {0}".format(user.cookie_dict))
-        print(Fore.CYAN + "pos&color: {0}".format(data))
+        print(Fore.CYAN + "Position&Color: {0}".format(data))
         print_line()
         user.last_time = time.time() + 1
         user_lst.append(user)
     task_que.append(now_task)
     if time.time() - log_timer > 5:
         with open("stat.log", "w") as logger:
-            logger.write("30s {0}\n".format(len(task_success_que)))
+            #logger.write("30s {0}\n".format(len(task_success_que)))
             logger.write("all {0}\n".format(task_success))
             logger.write("{0}%\n".format(task_success*100/task_num))
         log_timer = time.time()

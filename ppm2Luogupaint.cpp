@@ -12,6 +12,7 @@ const int col_dic[32][3]={
     {255, 152, 0},{255, 87, 34},{184, 63, 39},{121, 85, 72}
 };
 int m,n,k;
+int ignore[4];//如果需要透明的颜色，ignore[0]=1,其余的变成对应颜色的RGB
 int abs(int x){return x<0?-x:x;}
 int main(){
 	freopen("_.ppm","r",stdin);
@@ -24,6 +25,7 @@ int main(){
 		for(int j=1;j<=m;j++){
 			int r,g,b;
 			scanf("%d%d%d",&r,&g,&b);
+			if(ignore[0]&&ignore[1]==r&&ignore[2]==g&&ignore[3]==b){printf("z");continue;}
 			r*=k,g*=k,b*=k;//上调至256位
 			int cur,cabs=0x3f3f3f3f;
 			for(int i=0;i<32;i++){
@@ -32,7 +34,7 @@ int main(){
 			}
 			printf("%c",cur<10?'0'+cur:'a'+cur-10);
 		}
-		puts("");
+		if(i!=n)puts("");
 	}
 	return 0;
 }

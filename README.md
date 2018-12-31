@@ -19,3 +19,7 @@ UM_id client_id _uid
 然后修改源码中的文件名就好了
 
 请使用`python3`，并确保安装`requests`库
+
+# 支持
+
+透明背景
